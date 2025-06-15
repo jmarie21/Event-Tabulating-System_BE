@@ -1,0 +1,6 @@
+@Event_Tabulating_System.API_HostAddress = http://localhost:5198
+
+GET {{Event_Tabulating_System.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

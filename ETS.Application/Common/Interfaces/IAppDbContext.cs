@@ -10,7 +10,7 @@ namespace ETS.Application.Common.Interfaces
 {
     public interface IAppDbContext
     {
-        DbSet<User> Users { get; }
+        DbSet<ETS.Domain.Entities.User> Users { get; }
         DbSet<Event> Events { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

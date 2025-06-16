@@ -1,5 +1,7 @@
 using ETS.Application.Common.Interfaces;
+using ETS.Application.User.Commands;
 using ETS.Infrastructure.Data.Contexts;
+using ETS.Infrastructure.Services.AuthServices;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +17,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+builder.Services.AddMediatR(config =>
+{
+    config.RegisterServicesFromAssembly(typeof(CreateUserCommand).Assembly);
+});
+
 builder.Services.AddScoped<IAppDbContext, AppDbContext>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 

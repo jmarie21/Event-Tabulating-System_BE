@@ -22,6 +22,16 @@ builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(typeof(CreateUserCommand).Assembly);
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", builder =>
+    {
+        builder.WithOrigins("http://localhost:3000") // Nuxt dev server
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddScoped<IAppDbContext, AppDbContext>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -36,6 +46,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseCors("AllowFrontend");
 
 app.MapControllers();
 

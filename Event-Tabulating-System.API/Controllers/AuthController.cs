@@ -1,4 +1,5 @@
 ﻿using ETS.Application.User.Commands;
+using ETS.Application.Users.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +33,19 @@ namespace Event_Tabulating_System.API.Controllers
                
 
             return Ok(user);
+        }
+
+        [HttpPost]
+        [Route("login")]
+        public async Task<IActionResult> Login(LoginUserCommand command)
+        {
+            var token = await _mediator.Send(command);
+            if (token is null)
+            {
+                return Unauthorized(new { message = "Invalid credentials" });
+            }
+
+            return Ok(token);  
         }
     }
 }

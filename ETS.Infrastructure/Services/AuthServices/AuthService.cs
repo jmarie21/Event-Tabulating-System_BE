@@ -3,26 +3,37 @@ using ETS.Application.Users.DTOs;
 using ETS.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace ETS.Infrastructure.Services.AuthServices
 {
-    public class AuthService(IAppDbContext context) : IAuthService 
+    public class AuthService(IAppDbContext context, IConfiguration configuration) : IAuthService
     {
         private readonly IAppDbContext _context = context;
 
-        public Task<string?> LoginAsync(string email, string password)
+        public async Task<string?> LoginAsync(string email, string password)
         {
-            throw new NotImplementedException();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user is null)
+            {
+                return null;
+            }
+
+            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash!, password) == PasswordVerificationResult.Failed)
+                return null!;
+
+            return GenerateToken(user);
+
         }
 
         public async Task<UserDto?> RegisterAsync(string firstName, string lastName, string email, string password)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == email)) 
+            if (await _context.Users.AnyAsync(u => u.Email == email))
                 return null!;
 
             var user = new User();
@@ -49,6 +60,30 @@ namespace ETS.Infrastructure.Services.AuthServices
                 LastName = newUser.LastName,
                 Email = newUser.Email,
             };
+        }
+
+        private string GenerateToken(User user)
+        {
+            var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.FirstName ?? string.Empty),
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString())
+                };
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(configuration.GetValue<string>("AppSettings:Token")!));
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: configuration.GetValue<string>("AppSettings:Issuer"),
+                audience: configuration.GetValue<string>("AppSettings:Audience"),
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

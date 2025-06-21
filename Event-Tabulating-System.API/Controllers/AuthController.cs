@@ -39,13 +39,18 @@ namespace Event_Tabulating_System.API.Controllers
         [Route("login")]
         public async Task<IActionResult> Login(LoginUserCommand command)
         {
-            var token = await _mediator.Send(command);
-            if (token is null)
+            var tokenDetails = await _mediator.Send(command);
+            if (tokenDetails is null)
             {
-                return Unauthorized(new { message = "Invalid credentials" });
+                var errorResponse = new ValidationProblemDetails(new Dictionary<string, string[]>
+                {
+                    {"Email", new[] {"Invalid Credentials"}}
+                });
+
+                return Unauthorized(errorResponse);
             }
 
-            return Ok(token);  
+            return Ok(new { token = tokenDetails });  
         }
     }
 }
